@@ -1,0 +1,248 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>jQuery, AJAX and Templating</title>
+		<style>		<!-- <link rel="stylesheet" href="tweetbox.css"> -->
+			#tweetbox {
+				display:block; width:300px; padding:10px; border:1px solid #aaa; -moz-border-radius:5px;
+				border-radius:5px; font-family:"Trebuchet MS", Arial, Helvetica, sans-serif;
+				background-color:#eee;
+			}
+			#tweetbox img { display:block; }
+			#user { margin-bottom:10px; float:left; }
+			#user h2 { margin:0 0 10px 0; position:relative; font-size:18px; }
+			#user img { float:left; }
+			#user p { width:230px; margin:0; position:relative; float:left; font-size:10px; color:#333; }
+			#user img { display:block; margin-right:10px; border:3px solid #333; }
+			#tools { margin:0; *margin-bottom:-10px; padding:0; clear:both; list-style-type:none; }
+			#tools li {  float:left; }
+			#tools a {
+				display:block; height:20px; padding:3px 24px; border:1px solid #aaa; border-bottom:none;
+				-moz-border-radius:5px 5px 0 0; border-radius:5px 5px 0 0; margin-right:-1px;
+				position:relative; font-size:14px; outline:none; background-color:#d6d6d6;
+				background-image:-webkit-gradient(linear, left top, left bottom, color-stop(0.5, #E8E8E8), color-stop(0, #DBDBDB), color-stop(0.5, #D6D6D6));
+				background-image: -moz-linear-gradient(center top, #E8E8E8 50%, #DBDBDB 0%, #D6D6D6 50%);
+			}
+			a { text-decoration:none; color:#333; }
+			#tools .on { height:21px; margin-top:-1px; top:1px; }
+			#feed { width:298px; border:1px solid #aaa; clear:both; background-color:#d6d6d6; }
+			#feed > div { display:none; }
+			noscript { display:block; padding:10px; font-size:13px; color:#333; }
+			#feed ul { padding:0; margin:0; }
+			#feed li { padding:0; border-bottom:1px solid #aaa; list-style-type:none; font-size:11px; }
+			#feed li:last-child, #feed li:last-child p { border-bottom:none; }
+			#feed p { padding:10px; margin:0; border-bottom:1px solid #eee; background-image:-webkit-gradient(linear, left bottom, left top, color-stop(0.48, #c2c2c2), color-stop(0.71, #d6d6d6)); background-image:-moz-linear-gradient(center bottom, #c2c2c2 48%, #d6d6d6 71%); }
+			#feed p:after { content:""; display:block; width:100%; height:0; clear:both; }
+			.tweet-link { display:block; margin-top:5px; color:#777; }
+			.img-link { display:block; margin:4px 10px 0 0; float:left; }
+			#feed .username a { font-size:14px; font-weight:bold; }
+			#feed .bio { display:block; margin-top:10px; }
+		</style>
+        <!--[if lte IE 8]>
+            <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+        <![endif]-->
+    </head>
+    <body>
+        <aside id="tweetbox">
+            <div id="user">
+                <h2><a href="http://twitter.com/danwellman" title="Visit Dan Wellman on Twitter">Dan Wellman</a></h2>
+                <a href="http://twitter.com/danwellman" title="Dan Wellman"><img src="img/me.png" alt="Dan Wellman"></a>
+                <p>Husband, father, front-end developer and author. Writes for Nettuts and Packt Publishing. Works for <a href="http://twitter/.com/designhaus" title="Design Haus">@designhaus</a> | jQuery fanatic :D</p>
+            </div>
+            <ul id="tools">
+                <li><a href="#tweets" title="Recent Tweets" class="on">Tweets</a></li>
+                <li><a href="#friends" title="Recent Friends">Friends</a></li>
+                <li><a href="#follows" title="Recent Followers">Followers</a></li>
+            </ul>
+            <div id="feed">
+                <div id="tweets">
+                    <noscript>This widget has super-awesome features which require the use of JavaScript. Please enable it for a better internet experience</noscript>
+					<script id="tweetTemplate" type="text/x-jquery-tmpl">
+						<li>
+							<p>
+								{{each text}}
+									{{if Name}}
+										{{tmpl(Name) "#atTemplate"}}
+									{{else}}
+										${Text}
+									{{/if}}
+								{{/each}}
+								<a class="tweet-link" href="http://twitter.com/danwellman/status/${tweetlink}">${timestamp}</a>
+							</p>
+						</li>
+					</script>
+					<script id="atTemplate" type="text/x-jquery-tmpl">
+						<a href="http://twitter.com/${$item.data}">${$item.data}</a>
+					</script>
+                </div>
+                <div id="friends">
+					<script id="ffTemplate" type="text/x-jquery-tmpl">
+						<li>
+							<p>
+								<a class="img-link" href="http://twitter.com/${screenname}"><img src="${img}" alt="${name}"></a>
+								<span class="username"><a href="http://twitter.com/${screenname}">${screenname}</a></span>
+								<span class="bio">${desc}</span>
+							</p>
+						</li>
+					</script>
+				</div>
+                <div id="follows">
+					<script id="ffTemplate" type="text/x-jquery-tmpl">
+						<li>
+							<p>
+								<a class="img-link" href="http://twitter.com/${screenname}"><img src="${img}" alt="${name}"></a>
+								<span class="username"><a href="http://twitter.com/${screenname}">${screenname}</a></span>
+								<span class="bio">${desc}</span>
+							</p>
+						</li>
+					</script>
+				</div>
+            </div>
+        </aside>
+        <script src="jquery.js"></script>
+        <script src="jquery.tmpl.min.js"></script>
+        <script> 	' src="tweetbox.js">
+			(function($) {
+				//tabs
+				var tweetbox = $("#tweetbox"),
+					tweetData = null,
+					friendData = null,
+					followData = null;
+			 
+				tweetbox.find("#tools a").click(function(e) {
+					e.preventDefault();
+			 
+					var link = $(this),
+						target = link.attr("href").split("#")[1];
+			 
+					tweetbox.find(".on").removeClass("on");
+					link.addClass("on");
+					tweetbox.find("#feed > div").hide();
+					tweetbox.find("#" + target).show();
+				});
+			})(jQuery);
+			
+			$.ajaxSetup({
+				dataType: "jsonp"
+			});
+			 
+			function getTweets() {
+				$.ajax("http://api.twitter.com/statuses/user_timeline/danwellman.json", {
+					success: function(data) {
+						var arr = [];
+							 
+						for (var x = 0; x < 5; x++) {
+							var dataItem = {};
+							dataItem["tweetlink"] = data[x].id_str;
+							dataItem["timestamp"] = convertDate(data, x);
+							dataItem["text"] = breakTweet(data, x);
+							arr.push(dataItem);
+						}
+							 
+						tweetData = arr;
+					}
+				});
+			}
+			function getFriends() {
+				return $.ajax("http://api.twitter.com/1/statuses/friends/danwellman.json", {
+					dataType: "jsonp",
+					success: function(data) {
+						var arr = [];
+							 
+						for (var x = 0; x < 5; x++) {
+							var dataItem = {};
+							dataItem["screenname"] = data[x].screen_name;
+							dataItem["img"] = data[x].profile_image_url;
+							dataItem["name"] = data[x].name;
+							dataItem["desc"] = data[x].description;
+							arr.push(dataItem);
+						}
+						 
+						friendData = arr;  
+					}
+				});
+			}
+			function getFollows() {
+				return $.ajax("http://api.twitter.com/1/statuses/followers/danwellman.json", {
+					dataType: "jsonp",
+					success: function(data) {
+						var arr = [];
+							 
+						for (var x = 0; x < 5; x++) {
+							var dataItem = {};
+							dataItem["screenname"] = data[x].screen_name;
+							dataItem["img"] = data[x].profile_image_url;
+							dataItem["name"] = data[x].name;
+							dataItem["desc"] = data[x].description;
+							arr.push(dataItem);
+						}
+							 
+						followData = arr;
+					}
+				});
+			}
+				 
+			//execute once all requests complete
+			$.when(getTweets(), getFriends(), getFollows()).then(function(){
+					 
+				//apply templates  
+			});
+			
+			//format date
+			convertDate = function(obj, i) {
+					 
+				//remove time zone offset in IE
+				if (window.ActiveXObject) {
+					obj[i].created_at = obj[i].created_at.replace(/[+]\d{4}/, "");
+				}
+					 
+				//pretty date in system locale
+				var days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+					date = new Date(obj[i].created_at),
+					formattedTimeStampArray = [days[obj[i].created_at], date.toLocaleDateString(), date.toLocaleTimeString()];
+						 
+				return formattedTimeStampArray.join(" ");
+			}
+				 
+			//format text
+			breakTweet = function(obj, i) {
+			 
+				//atify
+				var text = obj[i].text,
+					brokenTweet = [],
+					atExpr = /(@[\w]+)/;
+			 
+				if (text.match(atExpr)) {
+					var splitTweet = text.split(atExpr);
+					 
+					for (var x = 0, y = splitTweet.length; x < y; x++) {
+			 
+						var tmpObj = {};
+							 
+						if (splitTweet[x].indexOf("@") != -1) {
+							tmpObj["Name"] = splitTweet[x];
+						} else {
+							tmpObj["Text"] = splitTweet[x];
+						}
+						 
+						brokenTweet.push(tmpObj);
+					}
+				} else {
+					var tmpObj = {};
+						tmpObj["Text"] = text;
+					brokenTweet.push(tmpObj);  
+				}
+					 
+				return brokenTweet;
+			}
+			//apply templates
+			tweetbox.find("#tweetTemplate").tmpl(tweetData).appendTo("#tweetList");
+			tweetbox.find("#ffTemplate").tmpl(friendData).appendTo("#friendList");
+			tweetbox.find("#ffTemplate").tmpl(followData).appendTo("#followList");
+					 
+			//show tweets
+			tweetbox.find("#tweets").show();
+		</script>
+    </body>
+</html>
