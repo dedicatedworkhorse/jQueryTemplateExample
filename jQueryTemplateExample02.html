@@ -1,0 +1,33 @@
+<html lang="en">
+<head>
+        <meta charset="utf-8">
+        <title>jQuery Template Example</title>
+        <link type="text/css" href="css/main.css" rel="stylesheet">
+        <script type="text/javascript" src="http://code.jquery.com/jquery-1.8.3.js"></script>
+        <script>
+            var steve = {'Name':'Steve','Skills':[{'Skill':'Rails'},{'Skill':'HTML'},{'Skill':'jQuery'}]};
+            
+            $(document).ready(function(){
+                $('#person-template').tmpl(steve).appendTo('.personal-detais');
+            });
+        </script>
+    <script src="http://ajax.microsoft.com/ajax/jquery.templates/beta1/jquery.tmpl.min.js"></script></head>
+
+
+<body>
+    <h3>Person Details</h3>
+    <div class="personal-detais">
+    <div class="person">     <strong>Name:</strong> Steve <br>     <strong>Skills: </strong><br>            Rails <br>             HTML <br>             jQuery <br>         </div></div>
+
+
+<script id="person-template" type="text/x-jquery-tmpl">
+  &lt;div class='person'&gt;
+    &lt;strong&gt;Name:&lt;/strong&gt; ${ Name } &lt;br /&gt;
+    &lt;strong&gt;Skills: &lt;/strong&gt;&lt;br /&gt;
+    {{each Skills}}
+      ${Skill} &lt;br /&gt; 
+    {{/each}}
+  &lt;/div&gt;
+</script>
+</body>
+</html>
